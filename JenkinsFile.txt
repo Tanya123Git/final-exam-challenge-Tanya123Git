@@ -1,5 +1,7 @@
 properties([pipelineTriggers([githubPush()])])
 
+git credentialsId: 'GithubID', url: 'https://github.com/Tanya123Git/final-exam-challenge-Tanya123Git.git'
+
 node('linux') {   
 	
 	stage('Setup') { 
