@@ -1,0 +1,46 @@
+properties([pipelineTriggers([githubPush()])])
+
+node('linux') {   
+	
+	stage('Setup') { 
+			sh 'aws s3 cp s3://dynacorps3/ /workspace/webapp/ '   
+			sudo apt-get install unzip
+			unzip 'webapp.zip'
+			
+	}   
+	
+	stage('Build') { 
+			sh 'docker build -t dynacorpweb:${BUILD_NUMBER} .'   
+			sh 'docker run -d --name dynacorpweb -p 80:8090 dynacorpweb:${BUILD_NUMBER}'
+	}   
+	
+	stage('Deploy DB') { 
+	        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+			credentialsId: 'AWS_Credential', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) 
+			{
+     				sh 'aws cloudformation create-stack --stackname dynacorp-databse --template-body /workspace/dynamodb.yml --key-name Gautam@123 --region us-east-1a'
+			}
+			
+	}
+	
+    stage('Test') { 
+		    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+			credentialsId: 'AWS_Credential', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) 
+			{
+		      sh 'docker service create --replicas 1 \ -p 80:80 --name website --env WEBSITE_TABLE="DynamoDB" 
+	        --update-delay 15s alpine ping devops
+			}
+
+				
+			
+	}
+	
+	post {
+		always {
+		  sh 'cleanWs()'
+		  sh "aws cloudformation delete-stack --stack-name dynacorp-databse"
+		  sh "[ \"\$(docker ps -a -q -f name=classweb1)\" ] && docker kill classweb1 && docker rm classweb1"
+		  echo "Docker container is removed"
+		}
+   }
+}

@@ -1,0 +1,8 @@
+FROM ubuntu:xenial
+EXPOSE 8090
+RUN apt-get update -y && \
+   apt-get install -y python-pip && \
+   apt-get install -y python-dev
+RUN pip install -r requirements.txt
+CMD ["appserver.py"]
+ENTRYPOINT ["python"]
