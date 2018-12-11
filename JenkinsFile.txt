@@ -5,7 +5,7 @@ git credentialsId: 'GithubID', url: 'https://github.com/Tanya123Git/final-exam-c
 node('linux') {   
 	
 	stage('Setup') { 
-			sh 'aws s3 cp s3://dynacorps3/ /workspace/webapp/ '   
+			sh 'aws s3 cp s3://dynacorps3/*.zip /workspace/webapp/ '   
 			sudo apt-get install unzip
 			unzip 'webapp.zip'
 			
